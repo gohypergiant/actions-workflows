@@ -1,0 +1,89 @@
+name: Hypergiant Golang CI workflow
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        required: true
+        type: string
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+
+      -
+        name: Secret Scan
+        uses: gohypergiant/secret-scan@master
+
+  gosec:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+
+      -
+        name: Setup Go environment
+        uses: actions/setup-go@v2.2.0
+        with:
+          go-version: ${{inputs.go-version}}
+
+      -
+        name: gosec
+        uses: securego/gosec@v2.9.6
+        with:
+          args: ./...
+
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+
+      -
+        name: Setup Go environment
+        uses: actions/setup-go@v2.2.0
+        with:
+          go-version: ${{inputs.go-version}}
+
+      -
+        name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          reporter: github-pr-review
+          fail_on_error: true
+          level: info
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+
+      -
+        name: Setup Go environment
+        uses: actions/setup-go@v2.2.0
+        with:
+          go-version: ${{inputs.go-version}}
+
+      -
+        name: Run unit tests
+        run: go test  ./...
